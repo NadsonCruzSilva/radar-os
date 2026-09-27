@@ -1,0 +1,75 @@
+/* =================================================================
+   RADAR OS — Design System Tokens
+   Editorial Command Deck Theme
+   ================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* ── Core Palette (Braun/Industrial Dashboard) ── */
+    --color-bg:         #EEF1E5;
+    --color-surface:    #E9ECE1;
+    --color-border:     #A2A59C; /* Lighter border so text stands out more */
+    --color-line:       #5D6058;
+    --color-ink:        #20211E;
+    --color-ink-muted:  #4A4C46; /* Darker muted text for contrast */
+    --color-accent:     #20211E;
+    --color-accent-dim: #D1D6CC;
+
+    /* ── Semantic Status ────────────────────── */
+    --color-todo:       #6E716A;
+    --color-todo-bg:    transparent;
+    --color-progress:   #B59B6A;
+    --color-progress-bg:transparent;
+    --color-done:       #7E8B72;
+    --color-done-bg:    transparent;
+
+    /* ── Risk/Impact ────────────────────────── */
+    --color-high:       #B59B6A;
+    --color-high-bg:    transparent;
+    --color-mid:        #6E716A;
+    --color-mid-bg:     transparent;
+    --color-low:        #7E8B72;
+    --color-low-bg:     transparent;
+
+    /* ── Shadows ────────────────────────────── */
+    --shadow-card:  none;
+    --shadow-hover: none;
+
+    /* ── Typography ─────────────────────────── */
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body:    'Space Grotesk', sans-serif;
+    --font-mono:    'IBM Plex Mono', monospace;
+
+    /* ── Radii ──────────────────────────────── */
+    --radius-sm:  2px;
+    --radius-md:  4px;
+    --radius-lg:  8px;
+    --radius-xl:  12px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html {
+    font-family: var(--font-body);
+    background-color: var(--color-bg);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+  }
+
+  body { margin: 0; min-height: 100vh; }
+
+  h1, h2, h3 { font-family: var(--font-display); letter-spacing: 0.02em; }
+}
+
+/* ── Scrollbar (webkit) ──────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--color-ink-muted); }
