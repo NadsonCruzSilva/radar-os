@@ -56,6 +56,8 @@ create table artigos (
   link           text,
   etapa_id       uuid references etapas(id) on delete set null,
   notas          text,
+  contribuicao   text,
+  uso_sugerido   text,
   created_at     timestamptz not null default now()
 );
 

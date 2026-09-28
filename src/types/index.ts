@@ -51,6 +51,8 @@ export interface Artigo {
   link?: string | null
   etapa_id?: string | null
   notas?: string | null
+  contribuicao?: string | null
+  uso_sugerido?: string | null
   created_at?: string
 }
 

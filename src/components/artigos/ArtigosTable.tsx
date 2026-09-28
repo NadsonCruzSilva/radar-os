@@ -13,6 +13,8 @@ const artigoSchema = z.object({
   status_leitura: z.enum(['A ler', 'Lendo', 'Lido', 'Citado no texto']),
   link: z.string().url().optional().or(z.literal('')),
   notas: z.string().optional(),
+  contribuicao: z.string().optional(),
+  uso_sugerido: z.string().optional(),
 })
 
 const TEMAS_SUGERIDOS = [
@@ -39,6 +41,8 @@ function ArtigoFormModal({
     status_leitura: (editArtigo?.status_leitura ?? 'A ler') as StatusLeitura,
     link: editArtigo?.link ?? '',
     notas: editArtigo?.notas ?? '',
+    contribuicao: editArtigo?.contribuicao ?? '',
+    uso_sugerido: editArtigo?.uso_sugerido ?? '',
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const [saving, setSaving] = useState(false)
@@ -62,6 +66,8 @@ function ArtigoFormModal({
       temas: result.data.temas.split(',').map(t => t.trim()).filter(Boolean),
       link: result.data.link || null,
       notas: form.notas || null,
+      contribuicao: form.contribuicao || null,
+      uso_sugerido: form.uso_sugerido || null,
       etapa_id: editArtigo?.etapa_id ?? null,
     }
     if (editArtigo) {
@@ -140,10 +146,34 @@ function ArtigoFormModal({
             id="notas"
             value={form.notas}
             onChange={set('notas')}
-            rows={3}
+            rows={2}
             placeholder="Anotações sobre relevância, citações-chave..."
             className="w-full px-3 py-2 text-sm bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] outline-none focus:ring-2 focus:ring-[var(--color-accent)] resize-none"
           />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="contribuicao">Contribuição aproveitável</Label>
+            <textarea
+              id="contribuicao"
+              value={form.contribuicao}
+              onChange={set('contribuicao')}
+              rows={2}
+              placeholder="O que de útil este artigo traz?"
+              className="w-full px-3 py-2 text-sm bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] outline-none focus:ring-2 focus:ring-[var(--color-accent)] resize-none"
+            />
+          </div>
+          <div>
+            <Label htmlFor="uso_sugerido">Uso sugerido no TCC</Label>
+            <textarea
+              id="uso_sugerido"
+              value={form.uso_sugerido}
+              onChange={set('uso_sugerido')}
+              rows={2}
+              placeholder="Como usar na sua pesquisa?"
+              className="w-full px-3 py-2 text-sm bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] outline-none focus:ring-2 focus:ring-[var(--color-accent)] resize-none"
+            />
+          </div>
         </div>
         <div className="flex justify-end gap-3 pt-2">
           <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
@@ -219,7 +249,7 @@ export function ArtigosTable() {
           <table className="w-full text-sm">
             <thead className="bg-[var(--color-bg)]">
               <tr>
-                {['Título', 'Autores', 'Ano', 'Temas', 'Status', 'Ações'].map(h => (
+                {['Título', 'Autores / Ano', 'Temas / Status', 'Contribuição / Uso', 'Ações'].map(h => (
                   <th key={h} className="text-left px-4 py-3 font-mono text-xs text-[var(--color-ink-muted)] uppercase tracking-wide border-b border-[var(--color-border)]">{h}</th>
                 ))}
               </tr>
@@ -240,19 +270,38 @@ export function ArtigosTable() {
                         className="text-xs text-[var(--color-accent)] hover:underline">↗ Ver fonte</a>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-[var(--color-ink-muted)] max-w-[180px] truncate">{a.autores}</td>
-                  <td className="px-4 py-3 font-mono text-[var(--color-ink-muted)]">{a.ano}</td>
                   <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-1">
+                    <div className="text-[var(--color-ink-muted)] max-w-[180px] truncate" title={a.autores}>{a.autores}</div>
+                    <div className="font-mono text-xs text-[var(--color-ink-muted)] mt-1">{a.ano}</div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-1 mb-2">
                       {a.temas.slice(0, 2).map(t => (
-                        <span key={t} className="text-xs bg-[var(--color-border)] text-[var(--color-ink-muted)] px-2 py-0.5 rounded-full">{t}</span>
+                        <span key={t} className="text-[10px] bg-[var(--color-border)] text-[var(--color-ink-muted)] px-1.5 py-0.5 rounded-full">{t}</span>
                       ))}
                       {a.temas.length > 2 && (
-                        <span className="text-xs text-[var(--color-ink-muted)]">+{a.temas.length - 2}</span>
+                        <span className="text-[10px] text-[var(--color-ink-muted)]">+{a.temas.length - 2}</span>
                       )}
                     </div>
+                    <LeituraBadge status={a.status_leitura} />
                   </td>
-                  <td className="px-4 py-3"><LeituraBadge status={a.status_leitura} /></td>
+                  <td className="px-4 py-3 min-w-[200px]">
+                    {a.contribuicao && (
+                      <div className="text-xs text-[var(--color-ink)] mb-1 line-clamp-2" title={a.contribuicao}>
+                        <strong className="text-[var(--color-ink-muted)] font-mono">Contribuição: </strong>
+                        {a.contribuicao}
+                      </div>
+                    )}
+                    {a.uso_sugerido && (
+                      <div className="text-xs text-[var(--color-ink)] line-clamp-2" title={a.uso_sugerido}>
+                        <strong className="text-[var(--color-ink-muted)] font-mono">Uso: </strong>
+                        {a.uso_sugerido}
+                      </div>
+                    )}
+                    {!a.contribuicao && !a.uso_sugerido && (
+                      <span className="text-xs italic text-[var(--color-ink-muted)]">Sem registro</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
                       <Button variant="ghost" size="sm" onClick={() => openEdit(a)}>✎</Button>
