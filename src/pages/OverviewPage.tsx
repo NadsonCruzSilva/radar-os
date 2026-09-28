@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useApp } from '@/context/AppContext'
-import { Card, ProgressBar, StatusBadge, ImpactoBadge, TipoRiscoBadge, LeituraBadge } from '@/components/ui'
+import { Card, ProgressBar, ImpactoBadge, TipoRiscoBadge, LeituraBadge } from '@/components/ui'
 
 const container = { hidden: {}, visible: { transition: { staggerChildren: 0.07 } } }
 const item = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.3 } } }
@@ -100,7 +100,7 @@ export default function OverviewPage() {
             { label: 'Progresso MVP', value: `${mvpDone}/${mvpItems.length}`, sub: `${Math.round((mvpDone / Math.max(mvpItems.length, 1)) * 100)}%`, icon: '◎', accent: true },
             { label: 'Artigos Lidos', value: String(artigosLidos), sub: `de ${artigos.length}`, icon: '◉', accent: false },
             { label: 'Riscos Altos', value: String(riscosAltos), sub: `${riscosAbertos} abertos`, icon: '◬', accent: riscosAltos === 0, danger: riscosAltos > 0 },
-          ].map((kpi, i) => (
+          ].map((kpi) => (
             <Card key={kpi.label} className="p-4 md:p-5 flex flex-col justify-between h-full bg-[var(--color-bg)]">
               <div className="flex items-start justify-between mb-4">
                 <span className="text-xl leading-none text-[var(--color-ink-muted)]">{kpi.icon}</span>
