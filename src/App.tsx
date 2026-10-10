@@ -3,10 +3,10 @@ import { AppProvider } from '@/context/AppContext'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Toaster } from 'sonner'
 import { useEffect, useState } from 'react'
-import { supabase, isDemoMode } from '@/lib/supabase'
-import { Session } from '@supabase/supabase-js'
+import { auth, isDemoMode } from '@/lib/firebase'
+import { onAuthStateChanged, type User } from 'firebase/auth'
 
-// Pages (lazy-imported for code splitting)
+// Pages
 import AuthPage from '@/pages/AuthPage'
 import OverviewPage from '@/pages/OverviewPage'
 import EtapasPage from '@/pages/EtapasPage'
@@ -16,24 +16,18 @@ import RiscosPage from '@/pages/RiscosPage'
 import ArtefatosPage from '@/pages/ArtefatosPage'
 
 function AppShell() {
-  const [session, setSession] = useState<Session | null>(null)
-  const [loadingAuth, setLoadingAuth] = useState(!isDemoMode)
+  const [user, setUser] = useState<User | null>(null)
+  const [loadingAuth, setLoadingAuth] = useState(() => !isDemoMode && !!auth)
 
   useEffect(() => {
-    if (isDemoMode || !supabase) return
+    if (!auth || isDemoMode) return
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
+    const unsubscribe = onAuthStateChanged(auth, currentUser => {
+      setUser(currentUser)
       setLoadingAuth(false)
     })
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-    })
-
-    return () => subscription.unsubscribe()
+    return () => unsubscribe()
   }, [])
 
   if (loadingAuth) {
@@ -44,7 +38,8 @@ function AppShell() {
     )
   }
 
-  if (!session && !isDemoMode) {
+  // If Firebase is configured and user is not logged in, show AuthPage
+  if (!user && !isDemoMode) {
     return <AuthPage />
   }
 

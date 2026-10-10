@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { useApp } from '@/context/AppContext'
-import { isDemoMode } from '@/lib/supabase'
+import { isDemoMode, auth, logOut } from '@/lib/firebase'
 import { cn } from '@/lib/utils'
 
 const navItems = [
@@ -14,6 +14,7 @@ const navItems = [
 
 export function Sidebar() {
   const { etapas, itensEscopo, artigos, decisoes } = useApp()
+  const currentUser = auth?.currentUser
 
   // KPIs
   const etapasDone = etapas.filter(e => e.status === 'Concluído').length
@@ -79,12 +80,26 @@ export function Sidebar() {
           <KPIChip label="Riscos altos" value={String(riscosAltos)} icon="◬" danger={riscosAltos > 0} />
         </div>
 
-        {isDemoMode && (
+        {isDemoMode ? (
           <div className="mt-6">
             <span className="inline-block w-full text-center text-[10px] uppercase tracking-widest font-mono font-bold px-2 py-1.5 rounded-full border border-[var(--color-progress)] text-[var(--color-progress)]">
-              Modo Demo
+              Modo Demo (Local)
             </span>
           </div>
+        ) : (
+          currentUser && (
+            <div className="mt-6 pt-4 border-t border-[var(--color-border)] flex items-center justify-between text-xs">
+              <span className="truncate max-w-[130px] font-mono text-[11px] text-[var(--color-ink-muted)]" title={currentUser.email || 'Convidado'}>
+                {currentUser.isAnonymous ? 'Convidado' : currentUser.email || 'Conectado'}
+              </span>
+              <button
+                onClick={() => logOut()}
+                className="text-[10px] uppercase font-mono text-[var(--color-high)] hover:underline"
+              >
+                Sair
+              </button>
+            </div>
+          )
         )}
       </div>
     </aside>
