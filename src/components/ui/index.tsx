@@ -90,10 +90,10 @@ export function Button({ variant = 'primary', size = 'md', className, children, 
   return (
     <button
       className={cn(
-        'inline-flex items-center justify-center gap-2 font-mono font-bold uppercase tracking-widest rounded-full transition-all duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border',
-        size === 'sm' && 'px-4 py-1.5 text-[10px]',
-        size === 'md' && 'px-6 py-2.5 text-xs',
-        size === 'lg' && 'px-8 py-3.5 text-sm',
+        'inline-flex items-center justify-center gap-2 font-mono font-bold uppercase tracking-widest rounded-full transition-all duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border select-none',
+        size === 'sm' && 'min-h-[36px] px-3.5 py-1.5 text-[11px]',
+        size === 'md' && 'min-h-[44px] px-5 py-2 text-xs',
+        size === 'lg' && 'min-h-[48px] px-7 py-3 text-sm',
         variant === 'primary' && 'bg-[var(--color-ink)] border-[var(--color-ink)] text-[var(--color-surface)] hover:bg-transparent hover:text-[var(--color-ink)] active:scale-95',
         variant === 'ghost' && 'border-transparent text-[var(--color-ink-muted)] hover:border-[var(--color-border)] hover:text-[var(--color-ink)]',
         variant === 'outline' && 'border border-[var(--color-border)] text-[var(--color-ink)] hover:bg-[var(--color-bg)]',
@@ -113,7 +113,7 @@ export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInp
   return (
     <input
       className={cn(
-        'w-full px-4 py-3 text-sm font-mono bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)]',
+        'w-full min-h-[44px] px-3.5 py-2.5 text-base sm:text-sm font-mono bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)]',
         'text-[var(--color-ink)] placeholder:text-[var(--color-ink-muted)]',
         'outline-none focus:ring-1 focus:ring-[var(--color-ink)] focus:border-[var(--color-ink)] transition-all',
         className
@@ -129,7 +129,7 @@ export function Textarea({ className, ...props }: React.TextareaHTMLAttributes<H
   return (
     <textarea
       className={cn(
-        'w-full px-4 py-3 text-sm font-mono bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)]',
+        'w-full px-3.5 py-2.5 text-base sm:text-sm font-mono bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)]',
         'text-[var(--color-ink)] placeholder:text-[var(--color-ink-muted)]',
         'outline-none focus:ring-1 focus:ring-[var(--color-ink)] focus:border-[var(--color-ink)] transition-all resize-none',
         className
@@ -145,7 +145,7 @@ export function Select({ className, ...props }: React.SelectHTMLAttributes<HTMLS
   return (
     <select
       className={cn(
-        'w-full px-4 py-3 text-sm font-mono bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)]',
+        'w-full min-h-[44px] px-3.5 py-2.5 text-base sm:text-sm font-mono bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)]',
         'text-[var(--color-ink)] outline-none focus:ring-1 focus:ring-[var(--color-ink)] focus:border-[var(--color-ink)] transition-all cursor-pointer',
         className
       )}
@@ -159,7 +159,7 @@ export function Select({ className, ...props }: React.SelectHTMLAttributes<HTMLS
 export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
   return (
     <label
-      className={cn('block text-xs font-medium text-[var(--color-ink-muted)] mb-1 font-mono uppercase tracking-wide', className)}
+      className={cn('block text-xs font-medium text-[var(--color-ink-muted)] mb-1.5 font-mono uppercase tracking-wide', className)}
       {...props}
     />
   )
@@ -179,26 +179,29 @@ export function Dialog({ open, onClose, title, children, size = 'md' }: DialogPr
   if (!open) return null
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
       onClick={e => e.target === e.currentTarget && onClose()}
     >
-      <div className="absolute inset-0 bg-[var(--color-ink)]/30 backdrop-blur-sm" />
+      <div className="fixed inset-0 bg-[var(--color-ink)]/40 backdrop-blur-sm" onClick={onClose} />
       <div className={cn(
-        'relative bg-[var(--color-surface)] rounded-[var(--radius-xl)] shadow-2xl w-full max-h-[90vh] overflow-y-auto',
+        'relative z-10 bg-[var(--color-surface)] rounded-[var(--radius-xl)] shadow-2xl w-full max-h-[92vh] flex flex-col my-auto border border-[var(--color-border)]',
         size === 'sm' && 'max-w-sm',
         size === 'md' && 'max-w-lg',
         size === 'lg' && 'max-w-2xl',
       )}>
-        <div className="flex items-center justify-between p-6 border-b border-[var(--color-border)]">
-          <h2 className="text-lg font-display text-[var(--color-ink)]">{title}</h2>
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-[var(--color-border)] shrink-0">
+          <h2 className="text-base sm:text-lg font-display text-[var(--color-ink)]">{title}</h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--color-bg)] text-[var(--color-ink-muted)] transition-colors text-xl leading-none"
+            className="w-10 h-10 min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full hover:bg-[var(--color-bg)] text-[var(--color-ink-muted)] transition-colors text-2xl leading-none"
+            aria-label="Fechar"
           >
             ×
           </button>
         </div>
-        <div className="p-6">{children}</div>
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1">
+          {children}
+        </div>
       </div>
     </div>
   )

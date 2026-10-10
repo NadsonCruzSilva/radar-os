@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useApp } from '@/context/AppContext'
 import { isDemoMode, auth, logOut } from '@/lib/firebase'
 import { cn } from '@/lib/utils'
@@ -12,7 +13,12 @@ const navItems = [
   { to: '/artefatos', label: 'Artefatos', icon: '◫' },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  mobileOpen?: boolean
+  onClose?: () => void
+}
+
+export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const { etapas, itensEscopo, artigos, decisoes } = useApp()
   const currentUser = auth?.currentUser
 
@@ -25,10 +31,10 @@ export function Sidebar() {
   ).length
   const riscosAltos = decisoes.filter(d => d.tipo === 'Risco' && d.impacto === 'Alto').length
 
-  return (
-    <aside className="w-64 shrink-0 flex flex-col h-screen sticky top-0 bg-[var(--color-surface)] border-r border-[var(--color-border)]">
-      {/* Brand */}
-      <div className="p-6 border-b border-[var(--color-border)]">
+  const sidebarContent = (
+    <div className="flex flex-col h-full bg-[var(--color-surface)]">
+      {/* Brand & Optional Close Button */}
+      <div className="p-5 sm:p-6 border-b border-[var(--color-border)] flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-[var(--color-ink)] rounded flex items-center justify-center shrink-0">
             <span className="text-[var(--color-surface)] text-sm font-mono font-bold">R</span>
@@ -40,22 +46,33 @@ export function Sidebar() {
             Radar OS
           </span>
         </div>
+
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="lg:hidden w-10 h-10 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full hover:bg-[var(--color-bg)] text-[var(--color-ink-muted)] text-xl transition-colors"
+            aria-label="Fechar menu"
+          >
+            ✕
+          </button>
+        )}
       </div>
 
       {/* Navigation */}
       <div className="p-4 flex-1 overflow-y-auto">
         <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--color-ink-muted)] mb-3 px-2">Comandos</p>
-        <nav className="flex flex-col gap-1">
+        <nav className="flex flex-col gap-1.5">
           {navItems.map(item => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.to === '/'}
+              onClick={onClose}
               className={({ isActive }) => cn(
-                'flex items-center gap-3 px-3 py-2 rounded-[var(--radius-md)] text-sm transition-all border border-transparent',
+                'flex items-center gap-3 px-3.5 py-2.5 min-h-[44px] rounded-[var(--radius-md)] text-sm transition-all border border-transparent select-none',
                 'hover:bg-[var(--color-bg)] hover:border-[var(--color-border)]',
                 isActive
-                  ? 'bg-[var(--color-ink)] border-[var(--color-ink)] text-[var(--color-surface)] font-medium pointer-events-none'
+                  ? 'bg-[var(--color-ink)] border-[var(--color-ink)] text-[var(--color-surface)] font-medium'
                   : 'text-[var(--color-ink)]'
               )}
             >
@@ -71,9 +88,9 @@ export function Sidebar() {
       </div>
 
       {/* System Status / KPIs */}
-      <div className="p-6 border-t border-[var(--color-border)] bg-[var(--color-bg)]">
-        <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--color-ink-muted)] mb-4">Status do Sistema</p>
-        <div className="flex flex-col gap-3">
+      <div className="p-5 sm:p-6 border-t border-[var(--color-border)] bg-[var(--color-bg)]">
+        <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--color-ink-muted)] mb-3 sm:mb-4">Status do Sistema</p>
+        <div className="flex flex-col gap-2.5 sm:gap-3">
           <KPIChip label="Etapas concluídas" value={`${etapasDone}/7`} icon="✓" />
           <KPIChip label="MVP Completo" value={`${mvpDone}/${mvpItems.length}`} icon="◎" accent />
           <KPIChip label="Artigos lidos" value={String(artigosLidos)} icon="◉" />
@@ -81,20 +98,20 @@ export function Sidebar() {
         </div>
 
         {isDemoMode ? (
-          <div className="mt-6">
+          <div className="mt-5 sm:mt-6">
             <span className="inline-block w-full text-center text-[10px] uppercase tracking-widest font-mono font-bold px-2 py-1.5 rounded-full border border-[var(--color-progress)] text-[var(--color-progress)]">
               Modo Demo (Local)
             </span>
           </div>
         ) : (
           currentUser && (
-            <div className="mt-6 pt-4 border-t border-[var(--color-border)] flex items-center justify-between text-xs">
+            <div className="mt-5 sm:mt-6 pt-4 border-t border-[var(--color-border)] flex items-center justify-between text-xs">
               <span className="truncate max-w-[130px] font-mono text-[11px] text-[var(--color-ink-muted)]" title={currentUser.email || 'Convidado'}>
                 {currentUser.isAnonymous ? 'Convidado' : currentUser.email || 'Conectado'}
               </span>
               <button
                 onClick={() => logOut()}
-                className="text-[10px] uppercase font-mono text-[var(--color-high)] hover:underline"
+                className="text-[10px] uppercase font-mono text-[var(--color-high)] hover:underline min-h-[36px] flex items-center"
               >
                 Sair
               </button>
@@ -102,7 +119,44 @@ export function Sidebar() {
           )
         )}
       </div>
-    </aside>
+    </div>
+  )
+
+  return (
+    <>
+      {/* Desktop Persistent Sidebar */}
+      <aside className="hidden lg:flex w-64 shrink-0 flex-col h-screen sticky top-0 border-r border-[var(--color-border)]">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile Drawer Overlay */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden flex">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-[var(--color-ink)]/40 backdrop-blur-sm"
+              onClick={onClose}
+            />
+
+            {/* Slide-in drawer */}
+            <motion.aside
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 280 }}
+              className="relative z-10 w-72 max-w-[85vw] h-full shadow-2xl border-r border-[var(--color-border)]"
+            >
+              {sidebarContent}
+            </motion.aside>
+          </div>
+        )}
+      </AnimatePresence>
+    </>
   )
 }
 

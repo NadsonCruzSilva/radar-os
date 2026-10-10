@@ -79,10 +79,10 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg)] p-6">
+    <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg)] p-3.5 sm:p-6">
       <div className="w-full max-w-sm">
         {/* Brand */}
-        <div className="flex items-center gap-3 mb-8 justify-center">
+        <div className="flex items-center gap-3 mb-6 sm:mb-8 justify-center">
           <div className="w-10 h-10 bg-[var(--color-ink)] rounded flex items-center justify-center shrink-0">
             <span className="text-[var(--color-surface)] text-lg font-mono font-bold">R</span>
           </div>
@@ -94,21 +94,21 @@ export default function AuthPage() {
           </span>
         </div>
 
-        <div className="border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-card)]">
+        <div className="border border-[var(--color-border)] bg-[var(--color-surface)] p-5 sm:p-6 shadow-[var(--shadow-card)] rounded-[var(--radius-lg)]">
           <h1 className="font-mono text-sm tracking-wide uppercase text-[var(--color-ink)] mb-6 text-center font-bold">
             {mode === 'login' ? 'Entrar no Radar OS' : 'Criar Conta no Radar OS'}
           </h1>
 
           {/* Quick 1-click Google Sign-in */}
-          <div className="flex flex-col gap-2 mb-6">
+          <div className="flex flex-col gap-2.5 mb-6">
             <Button
               type="button"
               variant="outline"
               onClick={handleGoogleLogin}
               disabled={loading}
-              className="w-full justify-center gap-2 border-[var(--color-border)]"
+              className="w-full justify-center gap-2 border-[var(--color-border)] min-h-[44px]"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                 <path
                   fill="#4285F4"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -126,7 +126,7 @@ export default function AuthPage() {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                 />
               </svg>
-              Continuar com Google
+              <span>Continuar com Google</span>
             </Button>
 
             <Button
@@ -134,7 +134,7 @@ export default function AuthPage() {
               variant="outline"
               onClick={handleGuestLogin}
               disabled={loading}
-              className="w-full justify-center text-xs text-[var(--color-ink-muted)]"
+              className="w-full justify-center text-xs text-[var(--color-ink-muted)] min-h-[44px]"
             >
               Entrar como Convidado / Anônimo
             </Button>
@@ -163,7 +163,7 @@ export default function AuthPage() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="seu@email.com"
-                className="px-3 py-2 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm text-[var(--color-ink)] focus:outline-none focus:border-[var(--color-ink)] transition-colors placeholder:text-[var(--color-ink-muted)] font-mono"
+                className="px-3.5 py-2.5 min-h-[44px] bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-base sm:text-sm text-[var(--color-ink)] focus:outline-none focus:border-[var(--color-ink)] transition-colors placeholder:text-[var(--color-ink-muted)] font-mono"
               />
             </div>
 
@@ -181,11 +181,11 @@ export default function AuthPage() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="px-3 py-2 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-sm text-[var(--color-ink)] focus:outline-none focus:border-[var(--color-ink)] transition-colors placeholder:text-[var(--color-ink-muted)] font-mono"
+                className="px-3.5 py-2.5 min-h-[44px] bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius-sm)] text-base sm:text-sm text-[var(--color-ink)] focus:outline-none focus:border-[var(--color-ink)] transition-colors placeholder:text-[var(--color-ink-muted)] font-mono"
               />
             </div>
 
-            <Button type="submit" disabled={loading} className="w-full justify-center mt-2">
+            <Button type="submit" disabled={loading} className="w-full justify-center mt-2 min-h-[44px]">
               {loading
                 ? 'Processando...'
                 : mode === 'login'
@@ -199,17 +199,17 @@ export default function AuthPage() {
               <button
                 type="button"
                 onClick={() => setMode('signup')}
-                className="text-xs text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] transition-colors font-mono"
+                className="text-xs text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] transition-colors font-mono min-h-[44px] inline-flex items-center"
               >
-                Não tem conta? <span className="underline font-bold">Criar conta</span>
+                Não tem conta?&nbsp;<span className="underline font-bold text-[var(--color-ink)]">Criar conta</span>
               </button>
             ) : (
               <button
                 type="button"
                 onClick={() => setMode('login')}
-                className="text-xs text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] transition-colors font-mono"
+                className="text-xs text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] transition-colors font-mono min-h-[44px] inline-flex items-center"
               >
-                Já tem conta? <span className="underline font-bold">Entrar</span>
+                Já tem conta?&nbsp;<span className="underline font-bold text-[var(--color-ink)]">Entrar</span>
               </button>
             )}
           </div>

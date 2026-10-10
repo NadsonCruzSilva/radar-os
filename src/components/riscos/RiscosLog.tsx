@@ -49,7 +49,7 @@ function AddDecisaoModal({ open, onClose }: { open: boolean; onClose: () => void
           <Input value={form.titulo} onChange={set('titulo')} placeholder="Ex.: Dependência da qualidade dos dados" />
           {errors.titulo && <p className="text-xs text-[var(--color-high)] mt-1">{errors.titulo}</p>}
         </div>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <Label>Tipo</Label>
             <Select value={form.tipo} onChange={set('tipo')}>
@@ -74,21 +74,29 @@ function AddDecisaoModal({ open, onClose }: { open: boolean; onClose: () => void
         </div>
         <div>
           <Label>Descrição</Label>
-          <textarea value={form.descricao} onChange={set('descricao')} rows={3}
-            className="w-full px-3 py-2 text-sm border border-[var(--color-border)] rounded-[var(--radius-md)] outline-none focus:ring-2 focus:ring-[var(--color-accent)] resize-none"
-            placeholder="Descreva o risco, decisão ou limitação..." />
+          <textarea
+            value={form.descricao}
+            onChange={set('descricao')}
+            rows={3}
+            className="w-full px-3.5 py-2.5 text-base sm:text-sm bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] outline-none focus:ring-1 focus:ring-[var(--color-ink)] resize-none"
+            placeholder="Descreva o risco, decisão ou limitação..."
+          />
           {errors.descricao && <p className="text-xs text-[var(--color-high)] mt-1">{errors.descricao}</p>}
         </div>
         <div>
           <Label>Mitigação / Observação</Label>
-          <textarea value={form.mitigacao} onChange={set('mitigacao')} rows={2}
-            className="w-full px-3 py-2 text-sm border border-[var(--color-border)] rounded-[var(--radius-md)] outline-none focus:ring-2 focus:ring-[var(--color-accent)] resize-none"
-            placeholder="Como mitigar ou o que foi decidido..." />
+          <textarea
+            value={form.mitigacao}
+            onChange={set('mitigacao')}
+            rows={2}
+            className="w-full px-3.5 py-2.5 text-base sm:text-sm bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] outline-none focus:ring-1 focus:ring-[var(--color-ink)] resize-none"
+            placeholder="Como mitigar ou o que foi decidido..."
+          />
           {errors.mitigacao && <p className="text-xs text-[var(--color-high)] mt-1">{errors.mitigacao}</p>}
         </div>
-        <div className="flex justify-end gap-3 pt-2">
-          <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button type="submit" disabled={saving}>{saving ? 'Salvando...' : 'Registrar'}</Button>
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2.5 sm:gap-3 pt-3 border-t border-[var(--color-border)]">
+          <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto">Cancelar</Button>
+          <Button type="submit" disabled={saving} className="w-full sm:w-auto">{saving ? 'Salvando...' : 'Registrar'}</Button>
         </div>
       </form>
     </Dialog>
@@ -98,17 +106,23 @@ function AddDecisaoModal({ open, onClose }: { open: boolean; onClose: () => void
 function RiscoCard({ d, onDelete }: { d: DecisaoRisco; onDelete: () => void }) {
   const [expanded, setExpanded] = useState(false)
   return (
-    <Card className="p-5">
-      <div className="flex items-start justify-between gap-4 mb-3">
+    <Card className="p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-2 flex-wrap">
           <TipoRiscoBadge tipo={d.tipo} />
           <ImpactoBadge impacto={d.impacto} />
           <span className="font-mono text-xs text-[var(--color-ink-muted)]">{formatDate(d.data)}</span>
         </div>
-        <Button variant="ghost" size="sm" onClick={onDelete} className="shrink-0 text-[var(--color-ink-muted)] hover:text-[var(--color-high)]">✕</Button>
+        <button
+          onClick={onDelete}
+          className="w-10 h-10 min-h-[40px] min-w-[40px] flex items-center justify-center rounded-[var(--radius-md)] border border-transparent hover:border-[var(--color-border)] hover:bg-[var(--color-bg)] text-[var(--color-ink-muted)] hover:text-[var(--color-high)] transition-colors text-base"
+          aria-label="Excluir risco ou decisão"
+        >
+          ✕
+        </button>
       </div>
 
-      <h3 className="font-semibold text-[var(--color-ink)] mb-2">{d.titulo}</h3>
+      <h3 className="font-semibold text-base sm:text-lg text-[var(--color-ink)] mb-2 leading-snug">{d.titulo}</h3>
 
       <p className={`text-sm text-[var(--color-ink-muted)] leading-relaxed ${expanded ? '' : 'line-clamp-2'}`}>
         {d.descricao}
@@ -125,9 +139,9 @@ function RiscoCard({ d, onDelete }: { d: DecisaoRisco; onDelete: () => void }) {
 
       <button
         onClick={() => setExpanded(e => !e)}
-        className="mt-3 text-xs text-[var(--color-accent)] hover:underline cursor-pointer"
+        className="mt-3 min-h-[44px] py-2 text-xs font-mono text-[var(--color-accent)] hover:underline cursor-pointer flex items-center"
       >
-        {expanded ? '↑ Menos' : '↓ Ver mais'}
+        {expanded ? '↑ Menos detalhes' : '↓ Ver mais detalhes'}
       </button>
     </Card>
   )
@@ -140,9 +154,9 @@ export function RiscosLog() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-[var(--color-ink-muted)]">{decisoes.length} entradas · mais recentes primeiro</p>
-        <Button onClick={() => setModalOpen(true)}>+ Registrar</Button>
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+        <p className="text-xs sm:text-sm text-[var(--color-ink-muted)] font-mono">{decisoes.length} entradas registradas</p>
+        <Button onClick={() => setModalOpen(true)} className="w-full sm:w-auto">+ Registrar</Button>
       </div>
 
       {sorted.length === 0 ? (
@@ -153,7 +167,7 @@ export function RiscosLog() {
           action={<Button onClick={() => setModalOpen(true)}>+ Registrar primeiro item</Button>}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
           {sorted.map((d, i) => (
             <motion.div
               key={d.id}

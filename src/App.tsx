@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AppProvider } from '@/context/AppContext'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { MobileHeader } from '@/components/layout/MobileHeader'
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav'
 import { Toaster } from 'sonner'
 import { useEffect, useState } from 'react'
 import { auth, isDemoMode } from '@/lib/firebase'
@@ -18,6 +20,7 @@ import ArtefatosPage from '@/pages/ArtefatosPage'
 function AppShell() {
   const [user, setUser] = useState<User | null>(null)
   const [loadingAuth, setLoadingAuth] = useState(() => !isDemoMode && !!auth)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     if (!auth || isDemoMode) return
@@ -45,9 +48,18 @@ function AppShell() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--color-bg)]">
-      <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <main className="flex-1 overflow-y-auto">
+      {/* Sidebar: persistent on desktop (lg+), animated drawer on mobile */}
+      <Sidebar
+        mobileOpen={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+      />
+
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        {/* Mobile Top Header (compact with brand and drawer toggle) */}
+        <MobileHeader onOpenMenu={() => setMobileMenuOpen(true)} />
+
+        {/* Main Content Area */}
+        <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
           <Routes>
             <Route path="/" element={<OverviewPage />} />
             <Route path="/etapas" element={<EtapasPage />} />
@@ -58,6 +70,9 @@ function AppShell() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
+
+        {/* Mobile Bottom Navigation (Thumb Zone friendly) */}
+        <MobileBottomNav onOpenMenu={() => setMobileMenuOpen(true)} />
       </div>
     </div>
   )
