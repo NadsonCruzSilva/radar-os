@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import type { Etapa, Artigo, ItemEscopo, DecisaoRisco, Artefato } from '@/types'
-import { db, isDemoMode } from '@/lib/firebase'
+import { db, auth, isDemoMode } from '@/lib/firebase'
+import { onAuthStateChanged } from 'firebase/auth'
 import {
   collection,
   getDocs,
@@ -78,59 +79,68 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     etapas: [], artigos: [], itensEscopo: [], decisoes: [], artefatos: [],
   })
 
-  // ── Load data ─────────────────────────────────────────────────────────────
+  // ── Load data when Auth state is established ──────────────────────────────
 
   useEffect(() => {
-    async function load() {
-      if (isDemoMode || !db) {
+    if (isDemoMode || !db || !auth) {
+      setData(getInitialDemoData())
+      setLoading(false)
+      return
+    }
+
+    const firestore = db
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
         setData(getInitialDemoData())
         setLoading(false)
         return
       }
 
+      setLoading(true)
       try {
-        // Firestore load
+        // Firestore load for authenticated user
         const [etapasSnap, artigosSnap, escopoSnap, decisoesSnap, artefatosSnap] = await Promise.all([
-          getDocs(query(collection(db, 'etapas'), orderBy('ordem', 'asc'))),
-          getDocs(query(collection(db, 'artigos'), orderBy('created_at', 'desc'))),
-          getDocs(query(collection(db, 'itens_escopo'), orderBy('created_at', 'asc'))),
-          getDocs(query(collection(db, 'decisoes_riscos'), orderBy('data', 'desc'))),
-          getDocs(query(collection(db, 'artefatos'), orderBy('created_at', 'asc'))),
+          getDocs(query(collection(firestore, 'etapas'), orderBy('ordem', 'asc'))),
+          getDocs(query(collection(firestore, 'artigos'), orderBy('created_at', 'desc'))),
+          getDocs(query(collection(firestore, 'itens_escopo'), orderBy('created_at', 'asc'))),
+          getDocs(query(collection(firestore, 'decisoes_riscos'), orderBy('data', 'desc'))),
+          getDocs(query(collection(firestore, 'artefatos'), orderBy('created_at', 'asc'))),
         ])
 
         // First-time seed if Firestore collection is empty
         if (etapasSnap.empty && escopoSnap.empty) {
-          const batch = writeBatch(db)
+          const batch = writeBatch(firestore)
           const now = new Date().toISOString()
 
           const initialEtapas: Etapa[] = seedEtapas.map(e => ({
             ...e,
-            user_id: 'default',
+            user_id: user.uid,
             created_at: now,
           })) as Etapa[]
 
           const initialEscopo: ItemEscopo[] = seedItensEscopo.map(i => ({
             ...i,
-            user_id: 'default',
+            user_id: user.uid,
             etapa_id: null,
             created_at: now,
           })) as ItemEscopo[]
 
           const initialDecisoes: DecisaoRisco[] = seedDecisoes.map(d => ({
             ...d,
-            user_id: 'default',
+            user_id: user.uid,
             etapa_id: null,
             created_at: now,
           })) as DecisaoRisco[]
 
           for (const item of initialEtapas) {
-            batch.set(doc(db, 'etapas', item.id), cleanDoc(item))
+            batch.set(doc(firestore, 'etapas', item.id), cleanDoc(item))
           }
           for (const item of initialEscopo) {
-            batch.set(doc(db, 'itens_escopo', item.id), cleanDoc(item))
+            batch.set(doc(firestore, 'itens_escopo', item.id), cleanDoc(item))
           }
           for (const item of initialDecisoes) {
-            batch.set(doc(db, 'decisoes_riscos', item.id), cleanDoc(item))
+            batch.set(doc(firestore, 'decisoes_riscos', item.id), cleanDoc(item))
           }
 
           await batch.commit()
@@ -165,9 +175,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } finally {
         setLoading(false)
       }
-    }
+    })
 
-    load()
+    return () => unsubscribe()
   }, [])
 
   // Persist demo data whenever it changes in demo mode
@@ -214,7 +224,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // ── Artigos ───────────────────────────────────────────────────────────────
 
   const addArtigo = useCallback(async (artigo: Omit<Artigo, 'id' | 'user_id' | 'created_at'>) => {
-    const newArtigo: Artigo = { ...artigo, id: generateId(), created_at: new Date().toISOString() }
+    const currentUid = auth?.currentUser?.uid || 'default'
+    const newArtigo: Artigo = {
+      ...artigo,
+      id: generateId(),
+      user_id: currentUid,
+      created_at: new Date().toISOString(),
+    }
     mutate('artigos', prev => [newArtigo, ...(prev as Artigo[])] as AppData['artigos'])
     if (!isDemoMode && db) {
       await setDoc(doc(db, 'artigos', newArtigo.id), cleanDoc(newArtigo))
@@ -253,7 +269,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [mutate])
 
   const addItemEscopo = useCallback(async (item: Omit<ItemEscopo, 'id' | 'user_id' | 'created_at'>) => {
-    const newItem: ItemEscopo = { ...item, id: generateId(), created_at: new Date().toISOString() }
+    const currentUid = auth?.currentUser?.uid || 'default'
+    const newItem: ItemEscopo = {
+      ...item,
+      id: generateId(),
+      user_id: currentUid,
+      created_at: new Date().toISOString(),
+    }
     mutate('itensEscopo', prev => [...(prev as ItemEscopo[]), newItem] as AppData['itensEscopo'])
     if (!isDemoMode && db) {
       await setDoc(doc(db, 'itens_escopo', newItem.id), cleanDoc(newItem))
@@ -263,7 +285,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // ── Decisões/Riscos ───────────────────────────────────────────────────────
 
   const addDecisao = useCallback(async (d: Omit<DecisaoRisco, 'id' | 'user_id' | 'created_at'>) => {
-    const newD: DecisaoRisco = { ...d, id: generateId(), created_at: new Date().toISOString() }
+    const currentUid = auth?.currentUser?.uid || 'default'
+    const newD: DecisaoRisco = {
+      ...d,
+      id: generateId(),
+      user_id: currentUid,
+      created_at: new Date().toISOString(),
+    }
     mutate('decisoes', prev => [newD, ...(prev as DecisaoRisco[])] as AppData['decisoes'])
     if (!isDemoMode && db) {
       await setDoc(doc(db, 'decisoes_riscos', newD.id), cleanDoc(newD))
@@ -280,7 +308,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // ── Artefatos ─────────────────────────────────────────────────────────────
 
   const addArtefato = useCallback(async (a: Omit<Artefato, 'id' | 'user_id' | 'created_at'>) => {
-    const newA: Artefato = { ...a, id: generateId(), created_at: new Date().toISOString() }
+    const currentUid = auth?.currentUser?.uid || 'default'
+    const newA: Artefato = {
+      ...a,
+      id: generateId(),
+      user_id: currentUid,
+      created_at: new Date().toISOString(),
+    }
     mutate('artefatos', prev => [newA, ...(prev as Artefato[])] as AppData['artefatos'])
     if (!isDemoMode && db) {
       await setDoc(doc(db, 'artefatos', newA.id), cleanDoc(newA))
