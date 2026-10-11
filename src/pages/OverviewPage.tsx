@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useApp } from '@/context/AppContext'
-import { Card, ProgressBar, ImpactoBadge, TipoRiscoBadge, LeituraBadge } from '@/components/ui'
+import { Card, ProgressBar, ImpactoBadge, TipoRiscoBadge, LeituraBadge, Button } from '@/components/ui'
+import { ExportAIDialog } from '@/components/overview/ExportAIDialog'
 
 const container = { hidden: {}, visible: { transition: { staggerChildren: 0.07 } } }
 const item = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.3 } } }
@@ -67,6 +69,7 @@ function HeroContextCard() {
 
 export default function OverviewPage() {
   const { etapas, artigos, itensEscopo, decisoes } = useApp()
+  const [exportOpen, setExportOpen] = useState(false)
 
   // KPI calculations
   const etapasDone = etapas.filter(e => e.status === 'Concluído').length
@@ -82,6 +85,26 @@ export default function OverviewPage() {
 
   return (
     <div className="max-w-[1400px] mx-auto px-3.5 sm:px-6 py-4 sm:py-8">
+      {/* Top action bar */}
+      <div className="flex items-center justify-between gap-3 mb-4 sm:mb-6">
+        <div>
+          <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--color-ink-muted)]">Painel Central</span>
+          <h1 className="text-xl sm:text-2xl font-bold uppercase tracking-wider text-[var(--color-ink)]" style={{ fontFamily: 'var(--font-display)' }}>
+            Visão Geral do TCC
+          </h1>
+        </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setExportOpen(true)}
+          className="text-xs flex items-center gap-2 border-[var(--color-border)] hover:border-[var(--color-ink)] bg-[var(--color-surface)] shadow-xs"
+        >
+          <span className="text-[var(--color-accent)] font-bold text-sm">✦</span>
+          <span>Copiar Resumo p/ IA</span>
+        </Button>
+      </div>
+
       <motion.div 
         variants={container} 
         initial="hidden" 
@@ -277,6 +300,7 @@ export default function OverviewPage() {
         </motion.div>
 
       </motion.div>
+      <ExportAIDialog open={exportOpen} onClose={() => setExportOpen(false)} />
     </div>
   )
 }

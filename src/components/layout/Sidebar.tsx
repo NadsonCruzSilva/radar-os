@@ -103,20 +103,32 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
               Modo Demo (Local)
             </span>
           </div>
+        ) : currentUser ? (
+          <div className="mt-5 sm:mt-6 pt-4 border-t border-[var(--color-border)] flex items-center justify-between text-xs">
+            <span className="truncate max-w-[130px] font-mono text-[11px] text-[var(--color-ink-muted)]" title={currentUser.email || 'Convidado'}>
+              {currentUser.isAnonymous ? 'Convidado' : currentUser.email || 'Conectado'}
+            </span>
+            <button
+              onClick={() => logOut()}
+              className="text-[10px] uppercase font-mono text-[var(--color-high)] hover:underline min-h-[36px] flex items-center cursor-pointer"
+            >
+              Sair
+            </button>
+          </div>
         ) : (
-          currentUser && (
-            <div className="mt-5 sm:mt-6 pt-4 border-t border-[var(--color-border)] flex items-center justify-between text-xs">
-              <span className="truncate max-w-[130px] font-mono text-[11px] text-[var(--color-ink-muted)]" title={currentUser.email || 'Convidado'}>
-                {currentUser.isAnonymous ? 'Convidado' : currentUser.email || 'Conectado'}
-              </span>
-              <button
-                onClick={() => logOut()}
-                className="text-[10px] uppercase font-mono text-[var(--color-high)] hover:underline min-h-[36px] flex items-center"
-              >
-                Sair
-              </button>
+          <div className="mt-5 sm:mt-6 pt-4 border-t border-[var(--color-border)] flex items-center justify-between text-xs">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[var(--color-accent)] animate-pulse" />
+              <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-ink-muted)]">Modo Visitante</span>
             </div>
-          )
+            <NavLink
+              to="/login"
+              onClick={onClose}
+              className="px-3 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider bg-[var(--color-ink)] text-[var(--color-surface)] rounded-full hover:bg-[var(--color-ink)]/90 transition-colors"
+            >
+              Entrar
+            </NavLink>
+          </div>
         )}
       </div>
     </div>

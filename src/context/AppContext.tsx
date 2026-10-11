@@ -20,6 +20,7 @@ import {
   seedDecisoes,
 } from '@/lib/seed'
 import { generateId } from '@/lib/utils'
+import { toast } from 'sonner'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -33,6 +34,7 @@ interface AppData {
 
 interface AppContextType extends AppData {
   loading: boolean
+  isReadOnly: boolean
   // Etapas
   updateEtapaStatus: (id: string, status: Etapa['status']) => Promise<void>
   reorderEtapas: (ids: string[]) => Promise<void>
@@ -79,7 +81,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     etapas: [], artigos: [], itensEscopo: [], decisoes: [], artefatos: [],
   })
 
-  // ── Load data when Auth state is established ──────────────────────────────
+  const isReadOnly = !auth?.currentUser && !isDemoMode
+
+  // ── Load data (works for both authenticated users and public visitors/AIs) ──
 
   useEffect(() => {
     if (isDemoMode || !db || !auth) {
@@ -91,15 +95,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const firestore = db
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        setData(getInitialDemoData())
-        setLoading(false)
-        return
-      }
-
       setLoading(true)
       try {
-        // Firestore load for authenticated user
+        // Query Firestore collections (works publicly if read rules are allowed or with active user)
         const [etapasSnap, artigosSnap, escopoSnap, decisoesSnap, artefatosSnap] = await Promise.all([
           getDocs(query(collection(firestore, 'etapas'), orderBy('ordem', 'asc'))),
           getDocs(query(collection(firestore, 'artigos'), orderBy('created_at', 'desc'))),
@@ -108,52 +106,58 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           getDocs(query(collection(firestore, 'artefatos'), orderBy('created_at', 'asc'))),
         ])
 
-        // First-time seed if Firestore collection is empty
+        // First-time seed if Firestore collection is empty and authenticated user is present
         if (etapasSnap.empty && escopoSnap.empty) {
-          const batch = writeBatch(firestore)
-          const now = new Date().toISOString()
+          if (user) {
+            const batch = writeBatch(firestore)
+            const now = new Date().toISOString()
 
-          const initialEtapas: Etapa[] = seedEtapas.map(e => ({
-            ...e,
-            user_id: user.uid,
-            created_at: now,
-          })) as Etapa[]
+            const initialEtapas: Etapa[] = seedEtapas.map(e => ({
+              ...e,
+              user_id: user.uid,
+              created_at: now,
+            })) as Etapa[]
 
-          const initialEscopo: ItemEscopo[] = seedItensEscopo.map(i => ({
-            ...i,
-            user_id: user.uid,
-            etapa_id: null,
-            created_at: now,
-          })) as ItemEscopo[]
+            const initialEscopo: ItemEscopo[] = seedItensEscopo.map(i => ({
+              ...i,
+              user_id: user.uid,
+              etapa_id: null,
+              created_at: now,
+            })) as ItemEscopo[]
 
-          const initialDecisoes: DecisaoRisco[] = seedDecisoes.map(d => ({
-            ...d,
-            user_id: user.uid,
-            etapa_id: null,
-            created_at: now,
-          })) as DecisaoRisco[]
+            const initialDecisoes: DecisaoRisco[] = seedDecisoes.map(d => ({
+              ...d,
+              user_id: user.uid,
+              etapa_id: null,
+              created_at: now,
+            })) as DecisaoRisco[]
 
-          for (const item of initialEtapas) {
-            batch.set(doc(firestore, 'etapas', item.id), cleanDoc(item))
+            for (const item of initialEtapas) {
+              batch.set(doc(firestore, 'etapas', item.id), cleanDoc(item))
+            }
+            for (const item of initialEscopo) {
+              batch.set(doc(firestore, 'itens_escopo', item.id), cleanDoc(item))
+            }
+            for (const item of initialDecisoes) {
+              batch.set(doc(firestore, 'decisoes_riscos', item.id), cleanDoc(item))
+            }
+
+            await batch.commit()
+
+            setData({
+              etapas: initialEtapas,
+              artigos: [],
+              itensEscopo: initialEscopo,
+              decisoes: initialDecisoes,
+              artefatos: [],
+            })
+            setLoading(false)
+            return
+          } else {
+            setData(getInitialDemoData())
+            setLoading(false)
+            return
           }
-          for (const item of initialEscopo) {
-            batch.set(doc(firestore, 'itens_escopo', item.id), cleanDoc(item))
-          }
-          for (const item of initialDecisoes) {
-            batch.set(doc(firestore, 'decisoes_riscos', item.id), cleanDoc(item))
-          }
-
-          await batch.commit()
-
-          setData({
-            etapas: initialEtapas,
-            artigos: [],
-            itensEscopo: initialEscopo,
-            decisoes: initialDecisoes,
-            artefatos: [],
-          })
-          setLoading(false)
-          return
         }
 
         const etapas = etapasSnap.docs.map(d => ({ id: d.id, ...d.data() }) as Etapa)
@@ -170,7 +174,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           artefatos,
         })
       } catch (err) {
-        console.error('Erro ao buscar dados do Firestore, carregando fallback local:', err)
+        console.warn('Leitura de dados do Firestore em modo visitante ou indisponível:', err)
         setData(getInitialDemoData())
       } finally {
         setLoading(false)
@@ -195,18 +199,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setData(d => ({ ...d, [key]: updater(d[key] as AppData[K]) }))
   }, [])
 
+  const checkCanEdit = useCallback((): boolean => {
+    if (isReadOnly) {
+      toast.info('Modo somente leitura. Faça login para realizar alterações.')
+      return false
+    }
+    return true
+  }, [isReadOnly])
+
   // ── Etapas ────────────────────────────────────────────────────────────────
 
   const updateEtapaStatus = useCallback(async (id: string, status: Etapa['status']) => {
+    if (!checkCanEdit()) return
     mutate('etapas', prev =>
       (prev as Etapa[]).map(e => e.id === id ? { ...e, status } : e) as AppData['etapas']
     )
     if (!isDemoMode && db) {
       await setDoc(doc(db, 'etapas', id), { status }, { merge: true })
     }
-  }, [mutate])
+  }, [mutate, checkCanEdit])
 
   const reorderEtapas = useCallback(async (ids: string[]) => {
+    if (!checkCanEdit()) return
     mutate('etapas', prev => {
       const map = new Map((prev as Etapa[]).map(e => [e.id, e]))
       return ids.map((id, i) => ({ ...map.get(id)!, ordem: i + 1 })) as AppData['etapas']
@@ -219,11 +233,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       })
       await batch.commit()
     }
-  }, [mutate])
+  }, [mutate, checkCanEdit])
 
   // ── Artigos ───────────────────────────────────────────────────────────────
 
   const addArtigo = useCallback(async (artigo: Omit<Artigo, 'id' | 'user_id' | 'created_at'>) => {
+    if (!checkCanEdit()) return
     const currentUid = auth?.currentUser?.uid || 'default'
     const newArtigo: Artigo = {
       ...artigo,
@@ -235,25 +250,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!isDemoMode && db) {
       await setDoc(doc(db, 'artigos', newArtigo.id), cleanDoc(newArtigo))
     }
-  }, [mutate])
+  }, [mutate, checkCanEdit])
 
   const updateArtigo = useCallback(async (id: string, updates: Partial<Artigo>) => {
+    if (!checkCanEdit()) return
     mutate('artigos', prev => (prev as Artigo[]).map(a => a.id === id ? { ...a, ...updates } : a) as AppData['artigos'])
     if (!isDemoMode && db) {
       await setDoc(doc(db, 'artigos', id), cleanDoc(updates), { merge: true })
     }
-  }, [mutate])
+  }, [mutate, checkCanEdit])
 
   const deleteArtigo = useCallback(async (id: string) => {
+    if (!checkCanEdit()) return
     mutate('artigos', prev => (prev as Artigo[]).filter(a => a.id !== id) as AppData['artigos'])
     if (!isDemoMode && db) {
       await deleteDoc(doc(db, 'artigos', id))
     }
-  }, [mutate])
+  }, [mutate, checkCanEdit])
 
   // ── Escopo ────────────────────────────────────────────────────────────────
 
   const toggleItemEscopo = useCallback(async (id: string) => {
+    if (!checkCanEdit()) return
     let nextStatus: ItemEscopo['status'] = 'Não iniciado'
     mutate('itensEscopo', prev => {
       return (prev as ItemEscopo[]).map(i => {
@@ -266,9 +284,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!isDemoMode && db) {
       await setDoc(doc(db, 'itens_escopo', id), { status: nextStatus }, { merge: true })
     }
-  }, [mutate])
+  }, [mutate, checkCanEdit])
 
   const addItemEscopo = useCallback(async (item: Omit<ItemEscopo, 'id' | 'user_id' | 'created_at'>) => {
+    if (!checkCanEdit()) return
     const currentUid = auth?.currentUser?.uid || 'default'
     const newItem: ItemEscopo = {
       ...item,
@@ -280,11 +299,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!isDemoMode && db) {
       await setDoc(doc(db, 'itens_escopo', newItem.id), cleanDoc(newItem))
     }
-  }, [mutate])
+  }, [mutate, checkCanEdit])
 
   // ── Decisões/Riscos ───────────────────────────────────────────────────────
 
   const addDecisao = useCallback(async (d: Omit<DecisaoRisco, 'id' | 'user_id' | 'created_at'>) => {
+    if (!checkCanEdit()) return
     const currentUid = auth?.currentUser?.uid || 'default'
     const newD: DecisaoRisco = {
       ...d,
@@ -296,18 +316,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!isDemoMode && db) {
       await setDoc(doc(db, 'decisoes_riscos', newD.id), cleanDoc(newD))
     }
-  }, [mutate])
+  }, [mutate, checkCanEdit])
 
   const deleteDecisao = useCallback(async (id: string) => {
+    if (!checkCanEdit()) return
     mutate('decisoes', prev => (prev as DecisaoRisco[]).filter(d => d.id !== id) as AppData['decisoes'])
     if (!isDemoMode && db) {
       await deleteDoc(doc(db, 'decisoes_riscos', id))
     }
-  }, [mutate])
+  }, [mutate, checkCanEdit])
 
   // ── Artefatos ─────────────────────────────────────────────────────────────
 
   const addArtefato = useCallback(async (a: Omit<Artefato, 'id' | 'user_id' | 'created_at'>) => {
+    if (!checkCanEdit()) return
     const currentUid = auth?.currentUser?.uid || 'default'
     const newA: Artefato = {
       ...a,
@@ -319,26 +341,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!isDemoMode && db) {
       await setDoc(doc(db, 'artefatos', newA.id), cleanDoc(newA))
     }
-  }, [mutate])
+  }, [mutate, checkCanEdit])
 
   const updateArtefato = useCallback(async (id: string, updates: Partial<Artefato>) => {
+    if (!checkCanEdit()) return
     mutate('artefatos', prev => (prev as Artefato[]).map(a => a.id === id ? { ...a, ...updates } : a) as AppData['artefatos'])
     if (!isDemoMode && db) {
       await setDoc(doc(db, 'artefatos', id), cleanDoc(updates), { merge: true })
     }
-  }, [mutate])
+  }, [mutate, checkCanEdit])
 
   const deleteArtefato = useCallback(async (id: string) => {
+    if (!checkCanEdit()) return
     mutate('artefatos', prev => (prev as Artefato[]).filter(a => a.id !== id) as AppData['artefatos'])
     if (!isDemoMode && db) {
       await deleteDoc(doc(db, 'artefatos', id))
     }
-  }, [mutate])
+  }, [mutate, checkCanEdit])
 
   return (
     <AppContext.Provider value={{
       ...data,
       loading,
+      isReadOnly,
       updateEtapaStatus,
       reorderEtapas,
       addArtigo,

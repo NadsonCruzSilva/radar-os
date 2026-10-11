@@ -1,19 +1,28 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
 import {
   signInWithGoogle,
   signInGuest,
   signInEmail,
   signUpEmail,
   isDemoMode,
+  auth,
 } from '@/lib/firebase'
 import { Button } from '@/components/ui'
 import { toast } from 'sonner'
 
 export default function AuthPage() {
+  const navigate = useNavigate()
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (auth?.currentUser) {
+      navigate('/', { replace: true })
+    }
+  }, [navigate])
 
   async function handleEmailAuth(e: React.FormEvent) {
     e.preventDefault()
@@ -36,6 +45,7 @@ export default function AuthPage() {
         await signUpEmail(email, password)
         toast.success('Conta criada com sucesso!')
       }
+      navigate('/')
     } catch (err: any) {
       console.error(err)
       toast.error(err?.message || 'Erro ao autenticar')
@@ -53,6 +63,7 @@ export default function AuthPage() {
     try {
       await signInWithGoogle()
       toast.success('Autenticado com Google!')
+      navigate('/')
     } catch (err: any) {
       console.error(err)
       toast.error(err?.message || 'Erro ao conectar com Google')
@@ -70,6 +81,7 @@ export default function AuthPage() {
     try {
       await signInGuest()
       toast.success('Entrando como convidado...')
+      navigate('/')
     } catch (err: any) {
       console.error(err)
       toast.error(err?.message || 'Erro ao entrar como convidado')
@@ -194,7 +206,7 @@ export default function AuthPage() {
             </Button>
           </form>
 
-          <div className="mt-6 text-center border-t border-[var(--color-border)] pt-4">
+          <div className="mt-6 text-center border-t border-[var(--color-border)] pt-4 flex flex-col items-center gap-3">
             {mode === 'login' ? (
               <button
                 type="button"
@@ -212,6 +224,13 @@ export default function AuthPage() {
                 Já tem conta?&nbsp;<span className="underline font-bold text-[var(--color-ink)]">Entrar</span>
               </button>
             )}
+
+            <Link
+              to="/"
+              className="text-xs text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] transition-colors font-mono"
+            >
+              ← Continuar como visitante (modo leitura)
+            </Link>
           </div>
         </div>
       </div>
